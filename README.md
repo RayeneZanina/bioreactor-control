@@ -1,1 +1,5 @@
 # bioreactor-control
+
+This project aims at finding optimal control for a bioreactor by modelling it, simulating real life conditions with incomplete and noisy measurements of the system's state instead of using the true state, recovering estimated state using an extended kalman filter, then finding optimal nutrient inlet profile to maximize biomass and ensure growth of the culture. 
+
+Right now, the project is far from complete. A model for an ideal bioreactor has been developped using ODEs for the entire system, and a kalman filter based on that model is used to find the system values. A new model for the bioreactor implementing a spatial grid with different local gradients is still in progress ( mostly complete ), and I want to investigate whether the extended kalman filter will be able to determine the state of the system using the initial model. Once I'm done with that, I'll start working on the control part. I'll also explain more of how the model works once this project is less of a mess and more structured.
