@@ -3,12 +3,28 @@ import numpy as np
 class EKF:
     def __init__(self, model, params):
         self.model = model
-        self.f = model.step
         self.h = model.get_measurement
         self.Q = params['Q']
         self.R = params['R']
         self.P = params['P']
         self.state = model.state
+
+    def f(self, state, F, dt):
+        intake = min(F * dt, self.model.capacity - state[2])
+        mu = self.model.monod_growth_rate(state)
+        dX_dt = mu * state[0] - (intake / dt) * state[0] / state[2]
+        dS_dt = - (mu / self.model.Y) * state[0] + (intake / dt) * (self.model.S_in - state[1]) / state[2]
+        dV = intake
+        dW_dt = self.model.kw * state[0] + self.model.kw_growth * mu * state[0] - (intake / dt) * state[3] / state[2]
+
+        new_state = np.array([
+            state[0] + dX_dt * dt,
+            state[1] + dS_dt * dt,
+            state[2] + dV,
+            state[3] + dW_dt * dt
+        ])
+
+        return new_state
     
     def jacobian(self, state, F, dt):
         A = np.zeros((state.shape[0], state.shape[0]))

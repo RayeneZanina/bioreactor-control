@@ -9,7 +9,7 @@ class Parameters:
             'initial_waste_concentration': 0.0,  # g/L
             'maximum_specific_growth': 0.4,  # 1/h
             'substrate_saturation_constant': 0.5,  # g/L
-            'waste_inhibition_constant': 0.1,  # g/L
+            'waste_inhibition_constant': 0.05,  # g/L
             'biomass_yield_coefficient': 0.5,  # g biomass / g substrate
             'waste_production_rate': 0.1,  # g waste / g biomass
             'growth_associated_waste_production_rate': 0.05,  # g waste / g biomass
@@ -25,9 +25,11 @@ class Parameters:
 
         self.grid_params = {
             'grid_size': 50,
-            'omega': 1.0,
-            'D': 1e-3,
-            'intake_source' : (25,0)
+            'omega': 3.0,
+            'alpha': 1.5,
+            'Ds': 2e-3,
+            'Dw': 1e-3,
+            'intake_source' : [[0, 24, 24, 49 ],[24, 0, 49, 24]]
         }
     
     def get_bioreactor_params(self):

@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.ndimage import gaussian_filter
 
 class ideal_Bioreactor:
     def __init__(self, bioreactor_params):
@@ -26,10 +27,10 @@ class ideal_Bioreactor:
     def step(self, state, F, dt):
         intake = min(F * dt, self.capacity - state[2])
         mu = self.monod_growth_rate(state)
-        dX_dt = mu * state[0] - F * state[0] / state[2]
-        dS_dt = - (mu / self.Y) * state[0] + F * (self.S_in - state[1]) / state[2]
+        dX_dt = mu * state[0] - (intake / dt) * state[0] / state[2]
+        dS_dt = - (mu / self.Y) * state[0] + (intake / dt) * (self.S_in - state[1]) / state[2]
         dV = intake
-        dW_dt = self.kw * state[0] + self.kw_growth * mu * state[0] - F * state[3] / state[2]
+        dW_dt = self.kw * state[0] + self.kw_growth * mu * state[0] - (intake / dt) * state[3] / state[2]
 
         new_state = np.array([
             state[0] + dX_dt * dt,
@@ -59,10 +60,10 @@ class real_Bioreactor:
             total = np.sum(grid) * dx * dx
             return grid * (total_value / total)
 
-        def velocity_field(grid_size, omega):
+        def velocity_field(grid_size, omega, alpha):
             x, y = np.meshgrid(np.linspace(0, 1, grid_size), np.linspace(0, 1, grid_size))
-            ux = -omega * (y - 0.5)
-            uy = omega * (x - 0.5)
+            ux = -omega * (y - 0.5) - alpha * (x - 0.5)
+            uy = omega * (x - 0.5) - alpha * (y - 0.5)
             return ux, uy
 
         self.Xi = bioreactor_params['initial_biomass_concentration']  # Biomass concentration (g/L)
@@ -87,10 +88,15 @@ class real_Bioreactor:
         self.W_grid = initialize_grid(self.grid_size, self.Wi, self.dx)
 
         self.omega = grid_params['omega']  # Stirring rate
-        self.D = grid_params['D']  # Diffusion coefficient
+        self.alpha = grid_params['alpha']  # Inward circulation rate
+        self.Ds = grid_params['Ds']  # Diffusion coefficient for substrate
+        self.Dw = grid_params['Dw']  # Diffusion coefficient for waste
         self.intake_source = grid_params['intake_source'] # Intake position
-        self.ux, self.uy = velocity_field(self.grid_size, self.omega)
+        self.ux, self.uy = velocity_field(self.grid_size, self.omega, self.alpha)
 
+    def monod_growth_rate(self, state):
+        return self.mu_max * (state[1] / (self.Ks + state[1])) * (1 / (1 + self.beta * state[3]))
+    
     def update(self, F, dt):
         
         def laplacian(grid, dx):
@@ -104,33 +110,39 @@ class real_Bioreactor:
         def grad_x(grid, dx):
             padded_grid = np.pad(grid, 1, mode='edge')
             return np.where(self.ux > 0, # This is actually really important to avoid oscillations
-                            (padded_grid[1:-1, 1:-1] - padded_grid[:-2, 1:-1]) / (dx),
-                            (padded_grid[:-2, 1:-1] - padded_grid[1:-1, 1:-1]) / (dx)) 
+                            (padded_grid[1:-1, 1:-1] - padded_grid[1:-1, :-2]) / (dx),
+                            (padded_grid[1:-1, 2:] - padded_grid[1:-1, 1:-1]) / (dx)) 
         
         def grad_y(grid, dx):
             padded_grid = np.pad(grid, 1, mode='edge')
             return np.where(self.uy > 0, 
-                            (padded_grid[1:-1, 1:-1] - padded_grid[1:-1, :-2]) / (dx),
-                            (padded_grid[1:-1, :-2] - padded_grid[1:-1, 1:-1]) / (dx))
+                            (padded_grid[1:-1, 1:-1] - padded_grid[:-2, 1:-1]) / (dx),
+                            (padded_grid[2:, 1:-1] - padded_grid[1:-1, 1:-1]) / (dx))
+        
         
         def monod(S_grid, W_grid):
             return self.mu_max * (S_grid / (self.Ks + S_grid)) * (1 / (1 + self.beta * W_grid))
 
         intake_scalar = min(F * dt, self.capacity - self.state[2])
         intake_grid = np.zeros((self.grid_size, self.grid_size))
-        intake_grid[self.intake_source] = intake_scalar
+        intake_grid[self.intake_source[0], self.intake_source[1]] = (intake_scalar * self.grid_size ** 2 /
+                                                                      len(self.intake_source[1]))
+        
+        D_turbulence = 0.01 * gaussian_filter(1 + 0.2 * np.random.rand(self.grid_size, self.grid_size), sigma=2)
 
         dX_dt = ( -(self.ux * grad_x(self.X_grid, self.dx) + self.uy * grad_y(self.X_grid, self.dx)) + 
             monod(self.S_grid, self.W_grid) * self.X_grid - 
-            F * self.X_grid / self.state[2])
+            (intake_scalar / dt) * self.X_grid / self.state[2]
+             + D_turbulence * laplacian(self.X_grid, self.dx)
+             )
         dS_dt = ( -(self.ux * grad_x(self.S_grid, self.dx) + self.uy * grad_y(self.S_grid, self.dx)) +
-            self.D * laplacian(self.S_grid, self.dx) - monod(self.S_grid, self.W_grid) * self.X_grid / self.Y +
-            F * (self.S_in - self.S_grid) / self.state[2]
+            (self.Ds + D_turbulence) * laplacian(self.S_grid, self.dx) - monod(self.S_grid, self.W_grid) * self.X_grid / self.Y +
+            (intake_grid) * self.S_in / self.state[2] - (intake_scalar / dt) * self.S_grid / self.state[2]
         )
         dW_dt = ( -(self.ux * grad_x(self.W_grid, self.dx) + self.uy * grad_y(self.W_grid, self.dx)) +
-                 self.D * laplacian(self.W_grid, self.dx) + self.kw * self.X_grid + 
+                 (self.Dw + D_turbulence) * laplacian(self.W_grid, self.dx) + self.kw * self.X_grid + 
                  self.kw_growth * monod(self.S_grid, self.W_grid) * self.X_grid -
-                 F * self.W_grid / self.state[2]
+                 (intake_scalar / dt) * self.W_grid / self.state[2]
         )
         dV = intake_scalar
         
