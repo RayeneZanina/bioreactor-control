@@ -7,7 +7,12 @@ I used an extended kalman filter to try to estimate the state of the bioreactor.
 Main.ipynb covers the information for how the model work with more details as well as a few experiments to try to determine the behaviour of the bioreactor as well as the EKF.
 
 <img width="1028" height="470" alt="image" src="https://github.com/user-attachments/assets/7d7b9258-2a16-4e5f-b222-c2b4a10addae" />
-
+The EKF showed minimal error for the measured state properties, although the error in waste which is not measured seems to increase over time
 <img width="594" height="455" alt="image" src="https://github.com/user-attachments/assets/77bbb96f-0016-4ca8-b206-22a5aa58861c" />
+The non-ideal bioreactor behaves differently from the ideal one due to some local starvation.
+<img width="1028" height="470" alt="image" src="https://github.com/user-attachments/assets/388c748e-69cd-4dd2-82db-40d24f0a9dac" />
+The EKF is still able to accurately estimate the state, up to a certain extent. If the non-ideal bioreactor doesn't have strong enough stirring and mixing of the solution, the EKF shows a jittery noisy signal and significant error.
+<img width="1015" height="470" alt="image" src="https://github.com/user-attachments/assets/c411997f-8dae-40eb-8c5e-8268a8a49430" />
+
 
 
