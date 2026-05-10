@@ -7,6 +7,7 @@ I used an extended kalman filter to try to estimate the state of the bioreactor.
 Main.ipynb covers the information for how the model work with more details as well as a few experiments to try to determine the behaviour of the bioreactor as well as the EKF.
 
 <img width="1028" height="470" alt="image" src="https://github.com/user-attachments/assets/7d7b9258-2a16-4e5f-b222-c2b4a10addae" />
+
 <img width="594" height="455" alt="image" src="https://github.com/user-attachments/assets/77bbb96f-0016-4ca8-b206-22a5aa58861c" />
 
 
