@@ -2,4 +2,11 @@
 
 This project aims at finding optimal control for a bioreactor by modelling it, simulating real life conditions with incomplete and noisy measurements of the system's state instead of using the true state, recovering estimated state using an extended kalman filter, then finding optimal nutrient inlet profile to maximize biomass and ensure growth of the culture. 
 
-Right now, the project is far from complete. A model for an ideal bioreactor has been developped using ODEs for the entire system, and a kalman filter based on that model is used to find the system values. A new model for the bioreactor implementing a spatial grid with different local gradients is still in progress ( mostly complete ), and I want to investigate whether the extended kalman filter will be able to determine the state of the system using the initial model. Once I'm done with that, I'll start working on the control part. I'll also explain more of how the model works once this project is less of a mess and more structured.
+I used an extended kalman filter to try to estimate the state of the bioreactor. I first implemented a simple model that assumes perfect homogeneity of the mixture, then implemented a spatial bioreactor model that simulates local concentration gradients. The EKF still uses the first simple model for the state estimation, and we investigate the error it will have when trying to estimate the state of a non-ideal bioreactor.
+
+Main.ipynb covers the information for how the model work with more details as well as a few experiments to try to determine the behaviour of the bioreactor as well as the EKF.
+
+<img width="1028" height="470" alt="image" src="https://github.com/user-attachments/assets/7d7b9258-2a16-4e5f-b222-c2b4a10addae" />
+<img width="594" height="455" alt="image" src="https://github.com/user-attachments/assets/77bbb96f-0016-4ca8-b206-22a5aa58861c" />
+
+
