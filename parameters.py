@@ -25,8 +25,8 @@ class Parameters:
 
         self.grid_params = {
             'grid_size': 50,
-            'omega': 3.0,
-            'alpha': 1.0,
+            'omega': 2.0,
+            'alpha': 0.75,
             'Ds': 2e-3,
             'Dw': 1e-3,
             'intake_source' : [[4, 24, 24, 44 ],[24, 4, 44, 24]]

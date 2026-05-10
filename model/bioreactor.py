@@ -141,7 +141,7 @@ class real_Bioreactor:
         intake_grid = np.zeros((self.grid_size, self.grid_size))
         #intake_grid[self.intake_source[0], self.intake_source[1]] = (intake_scalar  / (dt *len(self.intake_source[1]) * self.dx**2))
         intake_grid[self.intake_source[0], self.intake_source[1]] = 1
-        D_turbulence = 0.01 * gaussian_filter(1 + 0.2 * np.random.rand(self.grid_size, self.grid_size), sigma=2)
+        D_turbulence = 0.03 * gaussian_filter(np.random.rand(self.grid_size, self.grid_size), sigma=2)
         # Tried simulating flow , but it didn't help ( in fact it was arguably worse)
         #ux_flow, uy_flow = fluid_transport(intake_scalar / dt, self.grid_size, self.intake_source, self.dx)
 
@@ -177,6 +177,6 @@ class real_Bioreactor:
 
     def get_measurement(self, state):
         return np.array([
-            state[0] + np.random.normal(0, 0.01),  # Adding some measurement noise
+            state[0] + np.random.normal(0, 0.05),  # Adding some measurement noise
             state[2] # Assume no noise since volume is easier to measure accurately
         ])
