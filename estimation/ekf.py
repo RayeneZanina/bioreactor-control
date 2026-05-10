@@ -3,9 +3,12 @@ import numpy as np
 class EKF:
     def __init__(self, model, params):
         self.model = model
-        self.h = model.get_measurement
         self.Q = params['Q']
-        self.R = params['R']
+        self.Rx = params['R_x']
+        self.Rs = params['R_s']
+        self.Rv = params['R_v']
+        self.X_interval = params['X_interval']
+        self.S_interval = params['S_interval']
         self.P = params['P']
         self.state = model.state
 
@@ -38,17 +41,40 @@ class EKF:
             A[:, i] = (f1 - f0) / epsilon
         return A
     
-    def step(self, F ,dt):
+
+    def step(self, F, t ,dt):
         A = self.jacobian(self.state, F, dt)
-        H = np.array([[1, 0, 0, 0], [0, 0, 1, 0]])  
 
         x_pred = self.f(self.state, F, dt)
+
+        H_rows, y, y_pred, R_diag = [], [], [], []
+
+        if (t % self.X_interval == 0):
+            H_rows.append([1,0,0,0])
+            y.append(self.model.state[0] + np.random.normal(0, self.Rx))
+            y_pred.append(x_pred[0])
+            R_diag.append(self.Rx)
+
+        if (t % self.S_interval == 0):
+            H_rows.append([0,1,0,0])
+            y.append(self.model.state[1] + np.random.normal(0, self.Rs))
+            y_pred.append(x_pred[1])
+            R_diag.append(self.Rs)
+
+        H_rows.append([0,0,1,0])
+        y.append(self.model.state[2] + np.random.normal(0, self.Rv))
+        y_pred.append(x_pred[2])
+        R_diag.append(self.Rv)
+
+        H = np.array(H_rows)
+        R = np.diag(R_diag)
+        y = np.array(y)
+        y_pred = np.array(y_pred)
+
         P_pred = A @ self.P @ A.T + self.Q
-        y_pred = self.h(x_pred)
-        y = self.h(self.model.state)
 
         innovation = y - y_pred
-        kalman_gain = P_pred @ H.T @ np.linalg.inv(H @ P_pred @ H.T + self.R)
+        kalman_gain = P_pred @ H.T @ np.linalg.inv(H @ P_pred @ H.T + R)
         self.state = x_pred + (kalman_gain @ innovation).flatten()
         self.P = (np.eye(self.P.shape[0]) - kalman_gain @ H ) @ P_pred
 

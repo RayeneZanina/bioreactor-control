@@ -18,8 +18,12 @@ class Parameters:
         }
 
         self.ekf_params = {
-            'Q' : np.diag([0.1, 0.1, 0.01, 0.1]),  # Process noise covariance
-            'R' : np.diag([0.1, 0.001]), # Measurement noise covariance
+            'Q' : np.diag([0.01, 0.01, 0.001, 0.01]),  # Process noise covariance
+            'R_x' : 0.1,
+            'R_s' : 0.1,
+            'R_v' : 0.001, # Measurement noise covariance
+            'X_interval' : 10, # Measurement interval
+            'S_interval' : 20,
             'P' : np.eye(4) * 0.1  # Initial estimation error covariance
         }
 

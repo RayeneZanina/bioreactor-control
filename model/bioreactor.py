@@ -174,9 +174,3 @@ class real_Bioreactor:
         
 
         self.state = np.array([new_X, new_S, new_V, new_W])
-
-    def get_measurement(self, state):
-        return np.array([
-            state[0] + np.random.normal(0, 0.05),  # Adding some measurement noise
-            state[2] # Assume no noise since volume is easier to measure accurately
-        ])
