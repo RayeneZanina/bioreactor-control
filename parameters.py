@@ -14,7 +14,7 @@ class Parameters:
             'waste_production_rate': 0.1,  # g waste / g biomass
             'growth_associated_waste_production_rate': 0.05,  # g waste / g biomass
             'capacity': 5.0,  # L
-            'inlet_substrate_concentration': 20.0  # g/L
+            'inlet_substrate_concentration': 40.0  # g/L
         }
 
         self.ekf_params = {
@@ -29,7 +29,7 @@ class Parameters:
             'alpha': 1.0,
             'Ds': 2e-3,
             'Dw': 1e-3,
-            'intake_source' : [[0, 24, 24, 49 ],[24, 0, 49, 24]]
+            'intake_source' : [[4, 24, 24, 44 ],[24, 4, 44, 24]]
         }
     
     def get_bioreactor_params(self):

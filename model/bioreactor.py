@@ -123,7 +123,7 @@ class real_Bioreactor:
         def monod(S_grid, W_grid):
             return self.mu_max * (S_grid / (self.Ks + S_grid)) * (1 / (1 + self.beta * W_grid))
         
-        def fluid_transport(F, grid_size, intake_source, dx):
+        '''def fluid_transport(F, grid_size, intake_source, dx):
             ux = np.zeros((grid_size, grid_size))
             uy = np.zeros((grid_size, grid_size))
             flow = F / len(intake_source[1])
@@ -135,48 +135,45 @@ class real_Bioreactor:
                 g = np.exp(- r2 / 0.5)
                 ux +=  flow * dX * g 
                 uy += flow * dY * g
-            return ux, uy
+            return ux, uy'''
 
-        intake_scalar = min(F * dt, self.capacity - self.state[2])
+        dV = min(F * dt, self.capacity - self.state[2])
         intake_grid = np.zeros((self.grid_size, self.grid_size))
-        intake_grid[self.intake_source[0], self.intake_source[1]] = (intake_scalar * self.grid_size ** 2 /
-                                                                      len(self.intake_source[1]))
-        
+        #intake_grid[self.intake_source[0], self.intake_source[1]] = (intake_scalar  / (dt *len(self.intake_source[1]) * self.dx**2))
+        intake_grid[self.intake_source[0], self.intake_source[1]] = 1
         D_turbulence = 0.01 * gaussian_filter(1 + 0.2 * np.random.rand(self.grid_size, self.grid_size), sigma=2)
-        ux_flow, uy_flow = fluid_transport(intake_scalar / dt, self.grid_size, self.intake_source, self.dx)
+        # Tried simulating flow , but it didn't help ( in fact it was arguably worse)
+        #ux_flow, uy_flow = fluid_transport(intake_scalar / dt, self.grid_size, self.intake_source, self.dx)
+
+
 
         dX_dt = ( -(self.ux * grad_x(self.X_grid, self.dx) + self.uy * grad_y(self.X_grid, self.dx)) + 
-            monod(self.S_grid, self.W_grid) * self.X_grid - 
-            (intake_scalar / dt) * self.X_grid / self.state[2]
+            monod(self.S_grid, self.W_grid) * self.X_grid 
              + D_turbulence * laplacian(self.X_grid, self.dx)
-             - (ux_flow * grad_x(self.X_grid, self.dx) + uy_flow * grad_y(self.X_grid, self.dx))
              )
+        s_feed_rate = (dV/ dt * self.S_in) / (self.state[2] + dV) * (intake_grid / np.sum(intake_grid)) * self.grid_size**2
         dS_dt = ( -(self.ux * grad_x(self.S_grid, self.dx) + self.uy * grad_y(self.S_grid, self.dx)) +
-            (self.Ds + D_turbulence) * laplacian(self.S_grid, self.dx) - monod(self.S_grid, self.W_grid) * self.X_grid / self.Y +
-            (intake_grid) * self.S_in / self.state[2] - (intake_scalar / dt) * self.S_grid / self.state[2]
-            - (ux_flow * grad_x(self.S_grid, self.dx) + uy_flow * grad_y(self.S_grid, self.dx))
+            (self.Ds + D_turbulence) * laplacian(self.S_grid, self.dx) 
+            - monod(self.S_grid, self.W_grid) * self.X_grid / self.Y +
+            s_feed_rate
         )
         dW_dt = ( -(self.ux * grad_x(self.W_grid, self.dx) + self.uy * grad_y(self.W_grid, self.dx)) +
                  (self.Dw + D_turbulence) * laplacian(self.W_grid, self.dx) + self.kw * self.X_grid + 
-                 self.kw_growth * monod(self.S_grid, self.W_grid) * self.X_grid -
-                 (intake_scalar / dt) * self.W_grid / self.state[2]
-                 - (ux_flow * grad_x(self.W_grid, self.dx) + uy_flow * grad_y(self.W_grid, self.dx))
+                 self.kw_growth * monod(self.S_grid, self.W_grid) * self.X_grid
         )
-        dV = intake_scalar
+        dilution_factor = self.state[2] / (self.state[2] + dV)
+
+        self.X_grid = (self.X_grid + dX_dt * dt) * dilution_factor
+        self.S_grid = (self.S_grid + dS_dt * dt) * dilution_factor
+        self.W_grid = (self.W_grid + dW_dt * dt) * dilution_factor
         
-        new_X_grid = self.X_grid + dX_dt * dt
-        new_S_grid = self.S_grid + dS_dt * dt
-        new_W_grid = self.W_grid + dW_dt * dt
-        
-        new_X = np.sum(new_X_grid) * self.dx * self.dx
-        new_S = np.sum(new_S_grid) * self.dx * self.dx
-        new_W = np.sum(new_W_grid) * self.dx * self.dx
         new_V = self.state[2] + dV
+        new_X = np.sum(self.X_grid) * self.dx * self.dx
+        new_S = np.sum(self.S_grid) * self.dx * self.dx
+        new_W = np.sum(self.W_grid) * self.dx * self.dx
+        
 
         self.state = np.array([new_X, new_S, new_V, new_W])
-        self.X_grid = new_X_grid
-        self.S_grid = new_S_grid
-        self.W_grid = new_W_grid
 
     def get_measurement(self, state):
         return np.array([
