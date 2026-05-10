@@ -122,6 +122,20 @@ class real_Bioreactor:
         
         def monod(S_grid, W_grid):
             return self.mu_max * (S_grid / (self.Ks + S_grid)) * (1 / (1 + self.beta * W_grid))
+        
+        def fluid_transport(F, grid_size, intake_source, dx):
+            ux = np.zeros((grid_size, grid_size))
+            uy = np.zeros((grid_size, grid_size))
+            flow = F / len(intake_source[1])
+            X, Y = np.meshgrid(np.linspace(0, 1, grid_size), np.linspace(0, 1, grid_size))
+            for x , y in zip(intake_source[0], intake_source[1]):
+                dX = X - (y/grid_size)
+                dY = Y - (x/grid_size)
+                r2 = dX**2 + dY**2 
+                g = np.exp(- r2 / 0.5)
+                ux +=  flow * dX * g 
+                uy += flow * dY * g
+            return ux, uy
 
         intake_scalar = min(F * dt, self.capacity - self.state[2])
         intake_grid = np.zeros((self.grid_size, self.grid_size))
@@ -129,20 +143,24 @@ class real_Bioreactor:
                                                                       len(self.intake_source[1]))
         
         D_turbulence = 0.01 * gaussian_filter(1 + 0.2 * np.random.rand(self.grid_size, self.grid_size), sigma=2)
+        ux_flow, uy_flow = fluid_transport(intake_scalar / dt, self.grid_size, self.intake_source, self.dx)
 
         dX_dt = ( -(self.ux * grad_x(self.X_grid, self.dx) + self.uy * grad_y(self.X_grid, self.dx)) + 
             monod(self.S_grid, self.W_grid) * self.X_grid - 
             (intake_scalar / dt) * self.X_grid / self.state[2]
              + D_turbulence * laplacian(self.X_grid, self.dx)
+             - (ux_flow * grad_x(self.X_grid, self.dx) + uy_flow * grad_y(self.X_grid, self.dx))
              )
         dS_dt = ( -(self.ux * grad_x(self.S_grid, self.dx) + self.uy * grad_y(self.S_grid, self.dx)) +
             (self.Ds + D_turbulence) * laplacian(self.S_grid, self.dx) - monod(self.S_grid, self.W_grid) * self.X_grid / self.Y +
             (intake_grid) * self.S_in / self.state[2] - (intake_scalar / dt) * self.S_grid / self.state[2]
+            - (ux_flow * grad_x(self.S_grid, self.dx) + uy_flow * grad_y(self.S_grid, self.dx))
         )
         dW_dt = ( -(self.ux * grad_x(self.W_grid, self.dx) + self.uy * grad_y(self.W_grid, self.dx)) +
                  (self.Dw + D_turbulence) * laplacian(self.W_grid, self.dx) + self.kw * self.X_grid + 
                  self.kw_growth * monod(self.S_grid, self.W_grid) * self.X_grid -
                  (intake_scalar / dt) * self.W_grid / self.state[2]
+                 - (ux_flow * grad_x(self.W_grid, self.dx) + uy_flow * grad_y(self.W_grid, self.dx))
         )
         dV = intake_scalar
         
