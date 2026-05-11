@@ -36,6 +36,12 @@ class Parameters:
             'intake_source' : [[4, 24, 24, 44 ],[24, 4, 44, 24]]
         }
     
+        self.mpc_params = {
+            'horizon': 300,
+            'F_arr': np.linspace(0, 1, 10),
+            'Wx': 1.0,
+            'Wf': 0.1
+        }
     def get_bioreactor_params(self):
         return self.bioreactor_params
 
