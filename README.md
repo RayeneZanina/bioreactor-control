@@ -9,7 +9,7 @@ I used an extended kalman filter to try to estimate the state of the bioreactor.
 
 I then used a MPC to determine the optimal input, using the ideal model that is easier to compute and allows to predict system evolution pretty cheaply.
 
-Main.ipynb covers the information for how the model work with more details as well as a few experiments to try to determine the behaviour of the bioreactor as well as the EKF.
+Main.ipynb covers the information for how the model work with more details as well as a few experiments to try to determine the behaviour of the bioreactor as well as the EKF, and to find optimal control using MPC.
 
 <img width="1015" height="470" alt="image" src="https://github.com/user-attachments/assets/bb558c78-a17a-480e-9a03-5c84b8712873" />
 The EKF is able to estimate the state and remove the measurement noise pretty well, as well as estimate variables that are not measured like the waste.
