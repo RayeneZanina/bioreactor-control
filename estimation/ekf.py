@@ -16,7 +16,7 @@ class EKF:
         intake = min(F * dt, self.model.capacity - state[2])
         mu = self.model.monod_growth_rate(state)
         dX_dt = mu * state[0] - (intake / dt) * state[0] / state[2]
-        dS_dt = - (mu / self.model.Y) * state[0] + (intake / dt) * (self.model.S_in - state[1]) / state[2]
+        dS_dt = - (mu / self.model.Y) * state[0] + (intake / dt) * (self.model.S_in - state[1]) / state[2] - self.model.Sd * state[1]
         dV = intake
         dW_dt = self.model.kw * state[0] + self.model.kw_growth * mu * state[0] - (intake / dt) * state[3] / state[2]
 

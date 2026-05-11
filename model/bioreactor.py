@@ -9,8 +9,11 @@ class ideal_Bioreactor:
         self.Wi = bioreactor_params['initial_waste_concentration']  # Waste concentration (g/L)
         self.mu_max = bioreactor_params['maximum_specific_growth']  # Maximum specific growth rate (1/h)
         self.Ks = bioreactor_params['substrate_saturation_constant']  # Substrate saturation constant (g/L)
+        self.Ki = bioreactor_params['inhibition_constant']  # Inhibition constant (g/L)
+        self.St = bioreactor_params['substrate_threshold_factor'] # Substrate threshold factor for inhibition (g/L)
         self.beta = bioreactor_params['waste_inhibition_constant']  # Waste inhibition constant (g/L)
         self.Y = bioreactor_params['biomass_yield_coefficient']  # Biomass yield coefficient (g biomass/g substrate)
+        self.Sd = bioreactor_params['substrate_decay_rate'] # Substrate decay rate (1/h)
         self.kw = bioreactor_params['waste_production_rate']  # Waste production rate (g waste/g biomass)
         self.kw_growth = bioreactor_params['growth_associated_waste_production_rate']  # Growth-associated waste production rate (g waste/g biomass)
         self.capacity = bioreactor_params['capacity']  # Maximum capacity of the bioreactor (L)
@@ -22,13 +25,13 @@ class ideal_Bioreactor:
         return self.state
 
     def monod_growth_rate(self, state):
-        return self.mu_max * (state[1] / (self.Ks + state[1])) * (1 / (1 + self.beta * state[3]))
+        return self.mu_max * (state[1] / (self.Ks + state[1]+ (max(0,state[1]- self.St * state[0]/self.Y)**2 / self.Ki))) * (1 / (1 + self.beta * state[3]))
 
     def step(self, state, F, dt):
         intake = min(F * dt, self.capacity - state[2])
         mu = self.monod_growth_rate(state)
         dX_dt = mu * state[0] - (intake / dt) * state[0] / state[2]
-        dS_dt = - (mu / self.Y) * state[0] + (intake / dt) * (self.S_in - state[1]) / state[2]
+        dS_dt = - (mu / self.Y) * state[0] + (intake / dt) * (self.S_in - state[1]) / state[2] - self.Sd * state[1]
         dV = intake
         dW_dt = self.kw * state[0] + self.kw_growth * mu * state[0] - (intake / dt) * state[3] / state[2]
 
@@ -72,8 +75,11 @@ class real_Bioreactor:
         self.Wi = bioreactor_params['initial_waste_concentration']  # Waste concentration (g/L)
         self.mu_max = bioreactor_params['maximum_specific_growth']  # Maximum specific growth rate (1/h)
         self.Ks = bioreactor_params['substrate_saturation_constant']  # Substrate saturation constant (g/L)
+        self.Ki = bioreactor_params['inhibition_constant']  # Inhibition constant (g/L)
+        self.St = bioreactor_params['substrate_threshold_factor'] # Substrate threshold factor for inhibition (g/L)
         self.beta = bioreactor_params['waste_inhibition_constant']  # Waste inhibition constant (g/L)
         self.Y = bioreactor_params['biomass_yield_coefficient']  # Biomass yield coefficient (g biomass/g substrate)
+        self.Sd = bioreactor_params['substrate_decay_rate'] # Substrate decay rate (1/h)
         self.kw = bioreactor_params['waste_production_rate']  # Waste production rate (g waste/g biomass)
         self.kw_growth = bioreactor_params['growth_associated_waste_production_rate']  # Growth-associated waste production rate (g waste/g biomass)
         self.capacity = bioreactor_params['capacity']  # Maximum capacity of the bioreactor (L)
@@ -95,7 +101,9 @@ class real_Bioreactor:
         self.ux, self.uy = velocity_field(self.grid_size, self.omega, self.alpha)
 
     def monod_growth_rate(self, state):
-        return self.mu_max * (state[1] / (self.Ks + state[1])) * (1 / (1 + self.beta * state[3]))
+        #return self.mu_max * (state[1] / (self.Ks + state[1])) * (1 / (1 + self.beta * state[3]))
+        return self.mu_max * (state[1] / (self.Ks + state[1]+ (max(0,state[1]- self.St * state[0]/self.Y)**2 / self.Ki))) * (1 / (1 + self.beta * state[3]))
+
     
     def update(self, F, dt):
         
@@ -121,7 +129,7 @@ class real_Bioreactor:
         
         
         def monod(S_grid, W_grid):
-            return self.mu_max * (S_grid / (self.Ks + S_grid)) * (1 / (1 + self.beta * W_grid))
+            return self.mu_max * (S_grid / (self.Ks + S_grid + (np.maximum(0,S_grid- self.St * self.X_grid/self.Y)**2 / self.Ki))) * (1 / (1 + self.beta * W_grid))
         
         '''def fluid_transport(F, grid_size, intake_source, dx):
             ux = np.zeros((grid_size, grid_size))
@@ -154,7 +162,7 @@ class real_Bioreactor:
         s_feed_rate = (dV/ dt * self.S_in) / (self.state[2] + dV) * (intake_grid / np.sum(intake_grid)) * self.grid_size**2
         dS_dt = ( -(self.ux * grad_x(self.S_grid, self.dx) + self.uy * grad_y(self.S_grid, self.dx)) +
             (self.Ds + D_turbulence) * laplacian(self.S_grid, self.dx) 
-            - monod(self.S_grid, self.W_grid) * self.X_grid / self.Y +
+            - monod(self.S_grid, self.W_grid) * self.X_grid / self.Y - self.Sd * self.S_grid +
             s_feed_rate
         )
         dW_dt = ( -(self.ux * grad_x(self.W_grid, self.dx) + self.uy * grad_y(self.W_grid, self.dx)) +

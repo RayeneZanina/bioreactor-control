@@ -36,7 +36,8 @@ class MPC:
             for _ in range(self.horizon):
                 predicted_state = self.f(predicted_state, F, dt)
             cost += (-self.Wx * (predicted_state[0] - current_state[0]) / current_state[0]) + self.Wf * F
-
+            if predicted_state[2] > self.model.capacity:
+                cost += 1e5
             if cost < best_cost:
                 best_cost = cost
                 best_F = F
