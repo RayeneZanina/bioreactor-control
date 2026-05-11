@@ -1,8 +1,13 @@
 # bioreactor-control
 
-This project aims at finding optimal control for a bioreactor by modelling it, simulating real life conditions with incomplete and noisy measurements of the system's state instead of using the true state, recovering estimated state using an extended kalman filter, then finding optimal nutrient inlet profile to maximize biomass and ensure growth of the culture. 
+This project aims at finding optimal control for a bioreactor by modelling it, simulating real life conditions with incomplete and noisy measurements of the system's state instead of using the true state, recovering estimated state using an extended kalman filter, then finding optimal nutrient inlet profile to maximize biomass and ensure growth of the culture with model predictive control. The idea is to use reduced order MPC by defining a simple model to estimate the state of the system then compute optimal control actions for a high-dimensional more complex system. 
+
+<img width="831" height="228" alt="image" src="https://github.com/user-attachments/assets/84d06b34-bcf6-43af-beaa-ff944ad88ec9" />
+
 
 I used an extended kalman filter to try to estimate the state of the bioreactor. I first implemented a simple model that assumes perfect homogeneity of the mixture, then implemented a spatial bioreactor model that simulates local concentration gradients. The EKF still uses the first simple model for the state estimation, and we investigate the error it will have when trying to estimate the state of a non-ideal bioreactor.
+
+The MPC hasn't been implemented yet, I'm working on it.
 
 Main.ipynb covers the information for how the model work with more details as well as a few experiments to try to determine the behaviour of the bioreactor as well as the EKF.
 
