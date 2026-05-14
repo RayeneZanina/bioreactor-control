@@ -12,13 +12,20 @@ I then used a MPC to determine the optimal input, using the ideal model that is 
 Main.ipynb covers the information for how the model work with more details as well as a few experiments to try to determine the behaviour of the bioreactor as well as the EKF, and to find optimal control using MPC.
 
 <img width="1015" height="470" alt="image" src="https://github.com/user-attachments/assets/bb558c78-a17a-480e-9a03-5c84b8712873" />
+
 The EKF is able to estimate the state and remove the measurement noise pretty well, as well as estimate variables that are not measured like the waste.
 <img width="584" height="435" alt="image" src="https://github.com/user-attachments/assets/11271968-2cf0-4fd0-9b42-2dc54c467827" />
+
 This holds for the real bioreactor simulation up to a certain point. As long as the mixture is stirred enough and the inlet is placed strategically to allow for diffusion of the substrate, the EKF shows similar error in the estimation, which is insignificant.
+
 <img width="584" height="435" alt="image" src="https://github.com/user-attachments/assets/fc27df8e-92f0-46f2-b501-83be75eb5ed7" />
+
 The MPC is then able to determine optimal feed for the system.
+
 <img width="594" height="455" alt="image" src="https://github.com/user-attachments/assets/ae0a2656-73c2-4879-9d9b-c0e7ae0fa360" />
+
 I tried a few different feed profiles, and the MPC feed outperformed all of them.
+
 <img width="572" height="455" alt="image" src="https://github.com/user-attachments/assets/cdc324cd-8f77-4f87-8035-fa2b104864ba" />
 
 
